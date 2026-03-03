@@ -1,0 +1,40 @@
+services:
+  # 1. The Brain (Your FastAPI App)
+  backend:
+    build: .
+    container_name: synapse_ai
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres?sslmode=disable
+      - REDIS_URL=redis://cache:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY} # Reads from your local .env
+    depends_on:
+      - db
+      - cache
+    restart: always
+
+  # 2. The Memory (Postgres)
+  db:
+    image: postgres:15-alpine
+    container_name: synapse_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5442:5432" # Maps local 5442 to internal 5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  # 3. The Speed (Redis)
+  cache:
+    image: redis:7-alpine
+    container_name: synapse_cache
+    ports:
+      - "6379:6379"
+    restart: always
+
+volumes:
+  postgres_data:
